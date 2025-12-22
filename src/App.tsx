@@ -123,7 +123,7 @@ const Foliage = ({ state }: { state: 'CHAOS' | 'FORMED' }) => {
 };
 
 // --- Component: Photo Ornaments (Double-Sided Polaroid) ---
-const PhotoOrnaments = ({ state, photoUrls }: { state: 'CHAOS' | 'FORMED', photoUrls: string[] }) => {
+const PhotoOrnaments = ({ state, photoUrls, onPhotoClick }: { state: 'CHAOS' | 'FORMED', photoUrls: string[], onPhotoClick: (url: string) => void }) => {
   const textures = useTexture(photoUrls);
   const count = CONFIG.counts.ornaments;
   const groupRef = useRef<THREE.Group>(null);
@@ -152,9 +152,13 @@ const PhotoOrnaments = ({ state, photoUrls }: { state: 'CHAOS' | 'FORMED', photo
       };
       const chaosRotation = new THREE.Euler(Math.random()*Math.PI, Math.random()*Math.PI, Math.random()*Math.PI);
 
+      const textureIndex = i % (Array.isArray(textures) ? textures.length : 1);
+      const textureUrl = photoUrls[textureIndex];
+
       return {
         chaosPos, targetPos, scale: baseScale, weight,
-        textureIndex: i % (Array.isArray(textures) ? textures.length : 1),
+        textureIndex,
+        textureUrl,
         borderColor,
         currentPos: chaosPos.clone(),
         chaosRotation,
@@ -163,7 +167,7 @@ const PhotoOrnaments = ({ state, photoUrls }: { state: 'CHAOS' | 'FORMED', photo
         wobbleSpeed: 0.5 + Math.random() * 0.5
       };
     });
-  }, [textures, count]);
+  }, [textures, photoUrls, count]);
 
   useFrame((stateObj, delta) => {
     if (!groupRef.current) return;
@@ -197,7 +201,17 @@ const PhotoOrnaments = ({ state, photoUrls }: { state: 'CHAOS' | 'FORMED', photo
   return (
     <group ref={groupRef}>
       {data.map((obj, i) => (
-        <group key={i} scale={[obj.scale, obj.scale, obj.scale]} rotation={state === 'CHAOS' ? obj.chaosRotation : [0,0,0]}>
+        <group 
+          key={i} 
+          scale={[obj.scale, obj.scale, obj.scale]} 
+          rotation={state === 'CHAOS' ? obj.chaosRotation : [0,0,0]}
+          onClick={(e) => {
+            e.stopPropagation();
+            onPhotoClick(obj.textureUrl);
+          }}
+          onPointerOver={() => { document.body.style.cursor = 'pointer' }}
+          onPointerOut={() => { document.body.style.cursor = 'auto' }}
+        >
           {/* 正面 */}
           <group position={[0, 0, 0.015]}>
             <mesh geometry={photoGeometry}>
@@ -379,7 +393,7 @@ const TopStar = ({ state }: { state: 'CHAOS' | 'FORMED' }) => {
 };
 
 // --- Main Scene Experience ---
-const Experience = ({ sceneState, rotationSpeed, photoUrls, photoMode, zoom, tilt, hasHand }: { sceneState: 'CHAOS' | 'FORMED', rotationSpeed: number, photoUrls: string[], photoMode: PhotoMode, zoom: number, tilt: number, hasHand: boolean }) => {
+const Experience = ({ sceneState, rotationSpeed, photoUrls, photoMode, zoom, tilt, hasHand, onPhotoClick }: { sceneState: 'CHAOS' | 'FORMED', rotationSpeed: number, photoUrls: string[], photoMode: PhotoMode, zoom: number, tilt: number, hasHand: boolean, onPhotoClick: (url: string) => void }) => {
   const controlsRef = useRef<any>(null);
   
   useFrame((_, delta) => {
@@ -429,7 +443,7 @@ const Experience = ({ sceneState, rotationSpeed, photoUrls, photoMode, zoom, til
       <group position={[0, -6, 0]}>
         <Foliage state={sceneState} />
         <Suspense fallback={null}>
-           {photoMode === 'photos' && photoUrls.length > 0 ? <PhotoOrnaments state={sceneState} photoUrls={photoUrls} /> : null}
+           {photoMode === 'photos' && photoUrls.length > 0 ? <PhotoOrnaments state={sceneState} photoUrls={photoUrls} onPhotoClick={onPhotoClick} /> : null}
            <ChristmasElements state={sceneState} />
            <FairyLights state={sceneState} />
            <TopStar state={sceneState} />
@@ -547,6 +561,97 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
   );
 };
 
+// --- Component: Photo Viewer Modal ---
+const PhotoViewer = ({ url, onClose }: { url: string | null, onClose: () => void }) => {
+  const [isVisible, setIsVisible] = useState(false);
+  const [activeUrl, setActiveUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (url) {
+      setActiveUrl(url);
+      setIsVisible(true);
+    } else {
+      setIsVisible(false);
+      // 等待动画结束再清空 url，避免闪烁
+      const timer = setTimeout(() => setActiveUrl(null), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [url]);
+
+  if (!activeUrl && !isVisible) return null;
+
+  return (
+    <div 
+      style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        zIndex: 1000, 
+        backgroundColor: 'rgba(0,0,0,0.92)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        backdropFilter: 'blur(15px)',
+        cursor: 'zoom-out',
+        opacity: isVisible ? 1 : 0,
+        pointerEvents: isVisible ? 'auto' : 'none',
+        transition: 'opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+      }}
+      onClick={onClose}
+    >
+      <div 
+        style={{ 
+          position: 'relative', 
+          maxWidth: '85vw', 
+          maxHeight: '85vh',
+          boxShadow: '0 20px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.1)',
+          borderRadius: '16px',
+          overflow: 'hidden',
+          transform: isVisible ? 'scale(1) translateY(0)' : 'scale(0.9) translateY(20px)',
+          transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+          background: '#111'
+        }}
+      >
+        <img 
+          src={activeUrl || ''} 
+          alt="Large View" 
+          style={{ 
+            display: 'block', 
+            maxWidth: '100%', 
+            maxHeight: '85vh', 
+            objectFit: 'contain' 
+          }} 
+        />
+        <button 
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
+          style={{
+            position: 'absolute',
+            top: '24px',
+            right: '24px',
+            width: '44px',
+            height: '44px',
+            borderRadius: '22px',
+            border: '1px solid rgba(255,255,255,0.15)',
+            background: 'rgba(0,0,0,0.4)',
+            color: '#fff',
+            fontSize: '28px',
+            cursor: 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.2s ease',
+            lineHeight: 1
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          onMouseOut={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.4)'}
+        >
+          ×
+        </button>
+      </div>
+    </div>
+  );
+};
+
 // --- App Entry ---
 export default function GrandTreeApp() {
   const [sceneState, setSceneState] = useState<'CHAOS' | 'FORMED'>('CHAOS');
@@ -562,6 +667,7 @@ export default function GrandTreeApp() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [photoMode, setPhotoMode] = useState<PhotoMode>('photos'); // empty 用于无照片模式
   const [fallbackNotice, setFallbackNotice] = useState<string | null>(null);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
 
   const userPhotoUrls = useMemo(() => cycleToLength(uploaded.map(u => u.url), MAX_UPLOAD_PHOTOS), [uploaded]);
   const photoUrls = useMemo(
@@ -706,11 +812,13 @@ export default function GrandTreeApp() {
               </div>
             }>
               <Canvas dpr={[1, 2]} gl={{ toneMapping: THREE.ReinhardToneMapping }} shadows>
-                  <Experience sceneState={sceneState} rotationSpeed={rotationSpeed} photoUrls={photoUrls} photoMode={photoMode} zoom={zoom} tilt={tilt} hasHand={hasHand} />
+                  <Experience sceneState={sceneState} rotationSpeed={rotationSpeed} photoUrls={photoUrls} photoMode={photoMode} zoom={zoom} tilt={tilt} hasHand={hasHand} onPhotoClick={setSelectedImageUrl} />
               </Canvas>
             </Suspense>
           </div>
           <GestureController onGesture={setSceneState} onMove={setRotationSpeed} onZoom={setZoom} onTilt={setTilt} onHandPresence={setHasHand} onStatus={setAiStatus} debugMode={debugMode} />
+
+          <PhotoViewer url={selectedImageUrl} onClose={() => setSelectedImageUrl(null)} />
 
           {/* UI - Stats */}
           <div style={{ position: 'absolute', bottom: '30px', left: '40px', color: '#888', zIndex: 10, fontFamily: 'sans-serif', userSelect: 'none' }}>
