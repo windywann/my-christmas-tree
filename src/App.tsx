@@ -17,7 +17,6 @@ import * as random from 'maath/random';
 import { GestureRecognizer, FilesetResolver, DrawingUtils } from "@mediapipe/tasks-vision";
 import { UploadPage, type UploadedImage } from './components/UploadPage';
 
-const TOP_PHOTO_URL = '/photos/top.jpg';
 const MAX_UPLOAD_PHOTOS = 31;
 const MAX_IMAGE_DIMENSION = 2000; // 防止超大图导致 GPU/内存崩溃
 type PhotoMode = 'photos' | 'empty';
@@ -671,7 +670,7 @@ export default function GrandTreeApp() {
 
   const userPhotoUrls = useMemo(() => cycleToLength(uploaded.map(u => u.url), MAX_UPLOAD_PHOTOS), [uploaded]);
   const photoUrls = useMemo(
-    () => (photoMode === 'photos' && userPhotoUrls.length > 0 ? [TOP_PHOTO_URL, ...userPhotoUrls] : []),
+    () => (photoMode === 'photos' && userPhotoUrls.length > 0 ? userPhotoUrls : []),
     [photoMode, userPhotoUrls]
   );
 
@@ -820,22 +819,6 @@ export default function GrandTreeApp() {
 
           <PhotoViewer url={selectedImageUrl} onClose={() => setSelectedImageUrl(null)} />
 
-          {/* UI - Stats */}
-          <div style={{ position: 'absolute', bottom: '30px', left: '40px', color: '#888', zIndex: 10, fontFamily: 'sans-serif', userSelect: 'none' }}>
-            <div style={{ marginBottom: '15px' }}>
-              <p style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '4px' }}>Memories</p>
-              <p style={{ fontSize: '24px', color: '#FFD700', fontWeight: 'bold', margin: 0 }}>
-                {CONFIG.counts.ornaments.toLocaleString()} <span style={{ fontSize: '10px', color: '#555', fontWeight: 'normal' }}>POLAROIDS</span>
-              </p>
-            </div>
-            <div>
-              <p style={{ fontSize: '10px', letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '4px' }}>Foliage</p>
-              <p style={{ fontSize: '24px', color: '#004225', fontWeight: 'bold', margin: 0 }}>
-                {(CONFIG.counts.foliage / 1000).toFixed(0)}K <span style={{ fontSize: '10px', color: '#555', fontWeight: 'normal' }}>EMERALD NEEDLES</span>
-              </p>
-            </div>
-          </div>
-
           {/* UI - Buttons */}
           <div style={{ position: 'absolute', bottom: '30px', right: '40px', zIndex: 10, display: 'flex', gap: '12px' }}>
             <button
@@ -903,7 +886,6 @@ export default function GrandTreeApp() {
           <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', color: aiStatus.includes('ERROR') ? '#FF0000' : 'rgba(255, 215, 0, 0.4)', fontSize: '10px', letterSpacing: '2px', zIndex: 10, background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px' }}>
             {aiStatus}
           </div>
-          {/* UI - Gesture Hint */}
           <div style={{ 
             position: 'absolute', 
             top: '60px', 
@@ -921,7 +903,7 @@ export default function GrandTreeApp() {
             whiteSpace: 'nowrap',
             fontFamily: 'sans-serif'
           }}>
-            开启摄像头，试试🖐张手掌、✊握拳头、👋移动手掌，看看圣诞树会有什么变化吧～
+            开启摄像头，试试🖐张手掌、✊握拳头、👋移动手掌，点击照片可查看大图～
           </div>
         </>
       )}
