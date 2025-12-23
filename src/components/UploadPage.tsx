@@ -6,6 +6,7 @@ export type UploadedImage = {
   id: string;
   file: File;
   url: string;
+  dataUrl: string;
 };
 
 const SUPPORTED_MIMES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
@@ -22,6 +23,8 @@ export function UploadPage(props: {
   isProcessing: boolean;
   canStart: boolean;
   fallbackNotice?: string | null;
+  hasSaved: boolean;
+  onRestore: () => void;
   onAddFiles: (files: File[]) => Promise<void>;
   onRemove: (id: string) => void;
   onClear: () => void;
@@ -34,6 +37,8 @@ export function UploadPage(props: {
     isProcessing,
     canStart,
     fallbackNotice,
+    hasSaved,
+    onRestore,
     onAddFiles,
     onRemove,
     onClear,
@@ -107,6 +112,9 @@ export function UploadPage(props: {
         <div className="uploadActions">
           <button className="btn btnGhost" onClick={onClear} disabled={images.length === 0 || isProcessing}>
             清空
+          </button>
+          <button className="btn btnGhost" onClick={onRestore} disabled={!hasSaved || isProcessing}>
+            恢复上次圣诞树
           </button>
           <button className="btn btnGhost" onClick={onStartEmpty} disabled={isProcessing}>
             无照片直接体验

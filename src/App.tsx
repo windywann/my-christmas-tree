@@ -20,11 +20,27 @@ import { UploadPage, type UploadedImage } from './components/UploadPage';
 const MAX_UPLOAD_PHOTOS = 31;
 const MAX_IMAGE_DIMENSION = 2000; // 防止超大图导致 GPU/内存崩溃
 type PhotoMode = 'photos' | 'empty';
+const STORAGE_KEY = 'grand-tree-last-session';
+const BGM_URL = 'https://cdn.pixabay.com/download/audio/2022/12/14/audio_1e3fb4a3c5.mp3?filename=christmas-jingle-bells-ambient-12651.mp3';
 
 function cycleToLength<T>(arr: T[], length: number) {
   if (arr.length === 0) return [];
   return Array.from({ length }, (_, i) => arr[i % arr.length]);
 }
+
+const fileToDataUrl = (file: File) =>
+  new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+const dataUrlToFile = async (dataUrl: string, filename: string, mime = 'image/jpeg') => {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  return new File([blob], filename, { type: mime });
+};
 
 // --- 视觉配置 ---
 const CONFIG = {
@@ -460,13 +476,14 @@ const Experience = ({ sceneState, rotationSpeed, photoUrls, photoMode, zoom, til
 
 // --- Gesture Controller ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, onStatus, debugMode }: any) => {
+const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, onStatus, debugMode, cameraEnabled }: any) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     let gestureRecognizer: GestureRecognizer;
     let requestRef: number;
+    let stream: MediaStream | null = null;
 
     const setup = async () => {
       onStatus("DOWNLOADING AI...");
@@ -482,7 +499,7 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
         });
         onStatus("REQUESTING CAMERA...");
         if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+          stream = await navigator.mediaDevices.getUserMedia({ video: true });
           if (videoRef.current) {
             videoRef.current.srcObject = stream;
             videoRef.current.play();
@@ -548,9 +565,22 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
         requestRef = requestAnimationFrame(predictWebcam);
       }
     };
+    if (!cameraEnabled) {
+      onStatus("CAMERA OFF");
+      if (videoRef.current && videoRef.current.srcObject) {
+        (videoRef.current.srcObject as MediaStream).getTracks().forEach(t => t.stop());
+        videoRef.current.srcObject = null;
+      }
+      onHandPresence(false);
+      return;
+    }
+
     setup();
-    return () => cancelAnimationFrame(requestRef);
-  }, [onGesture, onMove, onZoom, onTilt, onHandPresence, onStatus, debugMode]);
+    return () => {
+      cancelAnimationFrame(requestRef);
+      if (stream) stream.getTracks().forEach(t => t.stop());
+    };
+  }, [onGesture, onMove, onZoom, onTilt, onHandPresence, onStatus, debugMode, cameraEnabled]);
 
   return (
     <>
@@ -667,6 +697,37 @@ export default function GrandTreeApp() {
   const [photoMode, setPhotoMode] = useState<PhotoMode>('photos'); // empty 用于无照片模式
   const [fallbackNotice, setFallbackNotice] = useState<string | null>(null);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [musicOn, setMusicOn] = useState(true);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [cameraEnabled, setCameraEnabled] = useState(true);
+  const [hasSavedSession, setHasSavedSession] = useState(false);
+
+  const persistSession = useCallback((images: UploadedImage[], mode: PhotoMode) => {
+    try {
+      if (mode === 'photos' && images.length > 0) {
+        const payload = {
+          photoMode: mode,
+          images: images.map(img => ({
+            id: img.id,
+            name: img.file.name,
+            dataUrl: img.dataUrl
+          }))
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
+        setHasSavedSession(true);
+      } else {
+        localStorage.removeItem(STORAGE_KEY);
+        setHasSavedSession(false);
+      }
+    } catch (err) {
+      console.error('保存上次圣诞树失败:', err);
+    }
+  }, []);
+
+  useEffect(() => {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) setHasSavedSession(true);
+  }, []);
 
   const userPhotoUrls = useMemo(() => cycleToLength(uploaded.map(u => u.url), MAX_UPLOAD_PHOTOS), [uploaded]);
   const photoUrls = useMemo(
@@ -714,10 +775,12 @@ export default function GrandTreeApp() {
       const processed: UploadedImage[] = [];
       for (const file of files) {
         const resized = await resizeImageIfNeeded(file);
+        const dataUrl = await fileToDataUrl(resized);
         processed.push({
           id: crypto.randomUUID(),
           file: resized,
-          url: URL.createObjectURL(resized)
+          url: URL.createObjectURL(resized),
+          dataUrl
         });
       }
       setUploaded(prev => {
@@ -751,9 +814,38 @@ export default function GrandTreeApp() {
     });
   }, []);
 
+  const restoreLastSession = useCallback(async () => {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return;
+    setIsProcessing(true);
+    try {
+      const parsed = JSON.parse(raw) as { photoMode: PhotoMode, images?: { id: string, name: string, dataUrl: string }[] };
+      if (parsed.photoMode === 'empty' || !parsed.images || parsed.images.length === 0) {
+        clearAll();
+        setPhotoMode('empty');
+        setPage('TREE');
+        return;
+      }
+      const rebuilt: UploadedImage[] = [];
+      for (const img of parsed.images.slice(0, MAX_UPLOAD_PHOTOS)) {
+        const file = await dataUrlToFile(img.dataUrl, img.name || 'photo.jpg');
+        const url = URL.createObjectURL(file);
+        rebuilt.push({ id: img.id || crypto.randomUUID(), file, url, dataUrl: img.dataUrl });
+      }
+      setUploaded(rebuilt);
+      setPhotoMode('photos');
+      setPage('TREE');
+    } catch (err) {
+      console.error('恢复上次圣诞树失败:', err);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, [clearAll]);
+
   useEffect(() => {
     uploadedRef.current = uploaded;
-  }, [uploaded]);
+    persistSession(uploaded, photoMode);
+  }, [uploaded, photoMode, persistSession]);
 
   useEffect(() => {
     // 防止把文件拖到窗口外层触发浏览器导航导致整页刷新/黑屏
@@ -776,8 +868,24 @@ export default function GrandTreeApp() {
     };
   }, []);
 
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.loop = true;
+    audio.volume = 0.4;
+    if (page === 'TREE' && musicOn) {
+      audio.play().catch(() => {
+        // 自动播放被阻止时，静音图标状态切换为关闭
+        setMusicOn(false);
+      });
+    } else {
+      audio.pause();
+    }
+  }, [page, musicOn]);
+
   return (
     <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
+      <audio ref={audioRef} src={BGM_URL} />
       {page === 'UPLOAD' ? (
         <UploadPage
           maxUploads={MAX_UPLOAD_PHOTOS}
@@ -785,6 +893,8 @@ export default function GrandTreeApp() {
           isProcessing={isProcessing}
           canStart={photoMode === 'empty' || uploaded.length > 0}
           fallbackNotice={fallbackNotice}
+          hasSaved={hasSavedSession}
+          onRestore={restoreLastSession}
           onAddFiles={addFiles}
           onRemove={removeById}
           onClear={clearAll}
@@ -815,12 +925,59 @@ export default function GrandTreeApp() {
         </Canvas>
             </Suspense>
       </div>
-          <GestureController onGesture={setSceneState} onMove={setRotationSpeed} onZoom={setZoom} onTilt={setTilt} onHandPresence={setHasHand} onStatus={setAiStatus} debugMode={debugMode} />
+          <GestureController onGesture={setSceneState} onMove={setRotationSpeed} onZoom={setZoom} onTilt={setTilt} onHandPresence={setHasHand} onStatus={setAiStatus} debugMode={debugMode} cameraEnabled={cameraEnabled} />
 
           <PhotoViewer url={selectedImageUrl} onClose={() => setSelectedImageUrl(null)} />
 
-      {/* UI - Buttons */}
-          <div style={{ position: 'absolute', bottom: '30px', right: '40px', zIndex: 10, display: 'flex', gap: '12px' }}>
+          {/* UI - Buttons */}
+          <div style={{ position: 'absolute', bottom: '30px', right: '40px', zIndex: 10, display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <button
+              onClick={() => setMusicOn(m => !m)}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '20px',
+                backgroundColor: musicOn ? 'rgba(255,215,0,0.9)' : 'rgba(0,0,0,0.5)',
+                border: musicOn ? '1px solid rgba(255,215,0,1)' : '1px solid rgba(255, 255, 255, 0.15)',
+                color: musicOn ? '#000' : 'rgba(255,255,255,0.85)',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontSize: '16px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                backdropFilter: 'blur(8px)',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                animation: musicOn ? 'spin 6s linear infinite' : 'none'
+              }}
+              title={musicOn ? '关闭音乐' : '开启音乐'}
+            >
+              ♪
+            </button>
+            <button
+              onClick={() => setCameraEnabled(v => !v)}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '20px',
+                backgroundColor: cameraEnabled ? 'rgba(0,0,0,0.5)' : 'rgba(255, 0, 0, 0.2)',
+                border: cameraEnabled ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(255,0,0,0.5)',
+                color: cameraEnabled ? '#FFD700' : '#ff6666',
+                fontFamily: 'system-ui, -apple-system, sans-serif',
+                fontSize: '16px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                backdropFilter: 'blur(8px)',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              title={cameraEnabled ? '关闭摄像头' : '开启摄像头'}
+            >
+              📷
+            </button>
             <button
               onClick={() => setPage('UPLOAD')}
               style={{
@@ -858,7 +1015,7 @@ export default function GrandTreeApp() {
               }}
             >
                {debugMode ? '隐藏画面' : '📷 摄像头画面'}
-        </button>
+            </button>
             <button 
               onClick={() => setSceneState(s => s === 'CHAOS' ? 'FORMED' : 'CHAOS')} 
               style={{ 
@@ -879,8 +1036,8 @@ export default function GrandTreeApp() {
               }}
             >
                {sceneState === 'CHAOS' ? '聚合' : '散开'}
-        </button>
-      </div>
+            </button>
+          </div>
 
       {/* UI - AI Status */}
       <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', color: aiStatus.includes('ERROR') ? '#FF0000' : 'rgba(255, 215, 0, 0.4)', fontSize: '10px', letterSpacing: '2px', zIndex: 10, background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px' }}>
