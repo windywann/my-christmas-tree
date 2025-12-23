@@ -817,7 +817,12 @@ export default function GrandTreeApp() {
   const [hasHand, setHasHand] = useState(false);
   const [aiStatus, setAiStatus] = useState("INITIALIZING...");
   const [debugMode] = useState(false);
-  const [page, setPage] = useState<'UPLOAD' | 'TREE'>('UPLOAD');
+  const initialSharedToken = (() => {
+    const hash = typeof window !== 'undefined' ? window.location.hash : '';
+    return hash.startsWith('#shared=') ? hash.replace('#shared=', '') : null;
+  })();
+  const [pendingSharedToken] = useState<string | null>(initialSharedToken);
+  const [page, setPage] = useState<'UPLOAD' | 'TREE'>(initialSharedToken ? 'TREE' : 'UPLOAD');
   const [uploaded, setUploaded] = useState<UploadedImage[]>([]);
   const uploadedRef = useRef<UploadedImage[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -1031,8 +1036,7 @@ export default function GrandTreeApp() {
   }, []);
 
   useEffect(() => {
-    const hash = window.location.hash;
-    const token = hash.startsWith('#shared=') ? hash.replace('#shared=', '') : null;
+    const token = pendingSharedToken;
     if (!token) return;
     (async () => {
       try {
@@ -1057,7 +1061,7 @@ export default function GrandTreeApp() {
         setIsProcessing(false);
       }
     })();
-  }, []);
+  }, [pendingSharedToken]);
 
   useEffect(() => {
     const audio = audioRef.current;
