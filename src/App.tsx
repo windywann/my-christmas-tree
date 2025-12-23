@@ -476,9 +476,26 @@ const Experience = ({ sceneState, rotationSpeed, photoUrls, photoMode, zoom, til
 
 // --- Gesture Controller ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, onStatus, debugMode, cameraEnabled }: any) => {
+const CameraOnIcon = ({ color = '#FFD700' }: { color?: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="7" width="13" height="10" rx="2" ry="2" />
+    <polygon points="16 8 21 5 21 19 16 16" />
+    <circle cx="9" cy="12" r="2.2" fill={color} stroke="none" />
+  </svg>
+);
+
+const CameraOffIcon = ({ color = '#FF6666' }: { color?: string }) => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="7" width="10" height="8" rx="2" ry="2" />
+    <line x1="1.5" y1="1.5" x2="22.5" y2="22.5" />
+    <polygon points="15 9 21 5 21 14" />
+  </svg>
+);
+
+const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, onStatus, debugMode, cameraEnabled, overlayVisible, overlayPos, onToggleOverlay, onDragOverlay }: any) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const dragRef = useRef<{ dragging: boolean; startX: number; startY: number; origX: number; origY: number }>({ dragging: false, startX: 0, startY: 0, origX: 0, origY: 0 });
 
   useEffect(() => {
     let gestureRecognizer: GestureRecognizer;
@@ -582,10 +599,122 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
     };
   }, [onGesture, onMove, onZoom, onTilt, onHandPresence, onStatus, debugMode, cameraEnabled]);
 
+  useEffect(() => {
+    const handleMove = (e: MouseEvent) => {
+      if (!dragRef.current.dragging) return;
+      const dx = e.clientX - dragRef.current.startX;
+      const dy = e.clientY - dragRef.current.startY;
+      onDragOverlay(dragRef.current.origX + dx, dragRef.current.origY + dy);
+    };
+    const handleUp = () => { dragRef.current.dragging = false; };
+    window.addEventListener('mousemove', handleMove);
+    window.addEventListener('mouseup', handleUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMove);
+      window.removeEventListener('mouseup', handleUp);
+    };
+  }, [onDragOverlay]);
+
+  const startDrag = (e: React.MouseEvent) => {
+    dragRef.current = { dragging: true, startX: e.clientX, startY: e.clientY, origX: overlayPos.x, origY: overlayPos.y };
+  };
+
   return (
     <>
-      <video ref={videoRef} style={{ opacity: debugMode ? 0.6 : 0, position: 'fixed', top: 0, right: 0, width: debugMode ? '320px' : '1px', zIndex: debugMode ? 100 : -1, pointerEvents: 'none', transform: 'scaleX(-1)' }} playsInline muted autoPlay />
-      <canvas ref={canvasRef} style={{ position: 'fixed', top: 0, right: 0, width: debugMode ? '320px' : '1px', height: debugMode ? 'auto' : '1px', zIndex: debugMode ? 101 : -1, pointerEvents: 'none', transform: 'scaleX(-1)' }} />
+      {overlayVisible ? (
+        <div
+          style={{
+            position: 'absolute',
+            top: overlayPos.y,
+            left: overlayPos.x,
+            width: 340,
+            height: 220,
+            zIndex: 12,
+            background: 'rgba(0,0,0,0.5)',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: '12px',
+            backdropFilter: 'blur(10px)',
+            overflow: 'hidden',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.35)'
+          }}
+        >
+          <div
+            style={{
+              height: 32,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0 10px',
+              cursor: 'move',
+              color: 'rgba(255,255,255,0.8)',
+              fontSize: 12,
+              letterSpacing: 1,
+              borderBottom: '1px solid rgba(255,255,255,0.08)'
+            }}
+            onMouseDown={startDrag}
+          >
+            <span>摄像头画面</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); onToggleOverlay(); }}
+              style={{
+                width: 22,
+                height: 22,
+                borderRadius: 11,
+                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(0,0,0,0.3)',
+                color: 'rgba(255,255,255,0.8)',
+                cursor: 'pointer',
+                fontSize: 12,
+                lineHeight: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+              title="收起画面"
+            >
+              –
+            </button>
+          </div>
+          <div style={{ position: 'relative', width: '100%', height: 'calc(100% - 32px)' }}>
+            <video
+              ref={videoRef}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: cameraEnabled ? 0.9 : 0.3, transform: 'scaleX(-1)' }}
+              playsInline
+              muted
+              autoPlay
+            />
+            <canvas
+              ref={canvasRef}
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)' }}
+            />
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={onToggleOverlay}
+          style={{
+            position: 'absolute',
+            top: overlayPos.y,
+            left: overlayPos.x,
+            zIndex: 12,
+            width: 46,
+            height: 46,
+            borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.15)',
+            background: 'rgba(0,0,0,0.5)',
+            color: 'rgba(255,255,255,0.85)',
+            cursor: 'pointer',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
+          }}
+          title="展开摄像头画面"
+        >
+          📷
+        </button>
+      )}
     </>
   );
 };
@@ -701,6 +830,9 @@ export default function GrandTreeApp() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [cameraEnabled, setCameraEnabled] = useState(true);
   const [hasSavedSession, setHasSavedSession] = useState(false);
+  const [cameraOverlayVisible, setCameraOverlayVisible] = useState(true);
+  const [cameraOverlayPos, setCameraOverlayPos] = useState<{ x: number, y: number }>({ x: window.innerWidth - 380, y: 20 });
+  const [sharedView, setSharedView] = useState(false);
 
   const persistSession = useCallback((images: UploadedImage[], mode: PhotoMode) => {
     try {
@@ -734,6 +866,24 @@ export default function GrandTreeApp() {
     () => (photoMode === 'photos' && userPhotoUrls.length > 0 ? userPhotoUrls : []),
     [photoMode, userPhotoUrls]
   );
+
+  const copyShareLink = useCallback(async () => {
+    if (photoMode !== 'photos' || uploaded.length === 0) return;
+    const payload = {
+      photoMode,
+      images: uploaded.map(img => ({ id: img.id, name: img.file.name, dataUrl: img.dataUrl }))
+    };
+    try {
+      const json = JSON.stringify(payload);
+      const encoded = btoa(unescape(encodeURIComponent(json)));
+      const url = `${window.location.origin}${window.location.pathname}?shared=${encoded}`;
+      await navigator.clipboard.writeText(url);
+      alert('分享链接已复制，可发送给好友查看你的圣诞树');
+    } catch (err) {
+      console.error('复制分享链接失败:', err);
+      alert('复制失败，请重试或检查浏览器权限');
+    }
+  }, [photoMode, uploaded]);
 
   const resizeImageIfNeeded = useCallback(async (file: File) => {
     // 仅对尺寸超大的图片做压缩，减轻内存/显存压力
@@ -771,6 +921,7 @@ export default function GrandTreeApp() {
   const addFiles = useCallback(async (files: File[]) => {
     setIsProcessing(true);
     setFallbackNotice(null);
+    setSharedView(false);
     try {
       const processed: UploadedImage[] = [];
       for (const file of files) {
@@ -812,12 +963,14 @@ export default function GrandTreeApp() {
       prev.forEach(p => URL.revokeObjectURL(p.url));
       return [];
     });
+    setSharedView(false);
   }, []);
 
   const restoreLastSession = useCallback(async () => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return;
     setIsProcessing(true);
+    setSharedView(false);
     try {
       const parsed = JSON.parse(raw) as { photoMode: PhotoMode, images?: { id: string, name: string, dataUrl: string }[] };
       if (parsed.photoMode === 'empty' || !parsed.images || parsed.images.length === 0) {
@@ -866,6 +1019,35 @@ export default function GrandTreeApp() {
       // 卸载时清理 object url，避免热更新/刷新累积
       uploadedRef.current.forEach(p => URL.revokeObjectURL(p.url));
     };
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('shared');
+    if (!token) return;
+    (async () => {
+      try {
+        const json = decodeURIComponent(escape(atob(token)));
+        const payload = JSON.parse(json) as { photoMode: PhotoMode, images?: { id: string, name: string, dataUrl: string }[] };
+        if (!payload.images || payload.images.length === 0) return;
+        setIsProcessing(true);
+        const rebuilt: UploadedImage[] = [];
+        for (const img of payload.images.slice(0, MAX_UPLOAD_PHOTOS)) {
+          const file = await dataUrlToFile(img.dataUrl, img.name || 'photo.jpg');
+          const url = URL.createObjectURL(file);
+          rebuilt.push({ id: img.id || crypto.randomUUID(), file, url, dataUrl: img.dataUrl });
+        }
+        setUploaded(rebuilt);
+        setPhotoMode('photos');
+        setPage('TREE');
+        setSharedView(true);
+        window.history.replaceState(null, '', window.location.pathname);
+      } catch (err) {
+        console.error('解析分享链接失败:', err);
+      } finally {
+        setIsProcessing(false);
+      }
+    })();
   }, []);
 
   useEffect(() => {
@@ -925,7 +1107,20 @@ export default function GrandTreeApp() {
         </Canvas>
             </Suspense>
       </div>
-          <GestureController onGesture={setSceneState} onMove={setRotationSpeed} onZoom={setZoom} onTilt={setTilt} onHandPresence={setHasHand} onStatus={setAiStatus} debugMode={debugMode} cameraEnabled={cameraEnabled} />
+          <GestureController
+            onGesture={setSceneState}
+            onMove={setRotationSpeed}
+            onZoom={setZoom}
+            onTilt={setTilt}
+            onHandPresence={setHasHand}
+            onStatus={setAiStatus}
+            debugMode={debugMode}
+            cameraEnabled={cameraEnabled}
+            overlayVisible={cameraOverlayVisible}
+            overlayPos={cameraOverlayPos}
+            onToggleOverlay={() => setCameraOverlayVisible(v => !v)}
+            onDragOverlay={(x: number, y: number) => setCameraOverlayPos({ x: Math.max(10, x), y: Math.max(10, y) })}
+          />
 
           <PhotoViewer url={selectedImageUrl} onClose={() => setSelectedImageUrl(null)} />
 
@@ -949,6 +1144,7 @@ export default function GrandTreeApp() {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                transformOrigin: '50% 50%',
                 animation: musicOn ? 'spin 6s linear infinite' : 'none'
               }}
               title={musicOn ? '关闭音乐' : '开启音乐'}
@@ -956,87 +1152,149 @@ export default function GrandTreeApp() {
               ♪
             </button>
             <button
-              onClick={() => setCameraEnabled(v => !v)}
+              onClick={() => {
+                setCameraEnabled(v => !v);
+                setCameraOverlayVisible(true);
+              }}
               style={{
-                width: '40px',
                 height: '40px',
-                borderRadius: '20px',
-                backgroundColor: cameraEnabled ? 'rgba(0,0,0,0.5)' : 'rgba(255, 0, 0, 0.2)',
+                padding: '0 14px',
+                borderRadius: '10px',
+                backgroundColor: cameraEnabled ? 'rgba(0,0,0,0.5)' : 'rgba(255, 0, 0, 0.15)',
                 border: cameraEnabled ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(255,0,0,0.5)',
-                color: cameraEnabled ? '#FFD700' : '#ff6666',
+                color: cameraEnabled ? 'rgba(255, 255, 255, 0.9)' : '#ff8888',
                 fontFamily: 'system-ui, -apple-system, sans-serif',
-                fontSize: '16px',
-                fontWeight: '700',
+                fontSize: '13px',
+                fontWeight: '600',
                 cursor: 'pointer',
                 backdropFilter: 'blur(8px)',
                 transition: 'all 0.2s ease',
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center'
+                gap: '8px',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
               }}
               title={cameraEnabled ? '关闭摄像头' : '开启摄像头'}
             >
-              📷
+              {cameraEnabled ? <CameraOnIcon color="#FFD700" /> : <CameraOffIcon color="#ff6666" />}
+              <span>摄像头</span>
             </button>
-            <button
-              onClick={() => setPage('UPLOAD')}
-              style={{
-                height: '40px',
-                padding: '0 20px',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                border: '1px solid rgba(255, 255, 255, 0.15)',
-                color: 'rgba(255, 255, 255, 0.85)',
-                fontFamily: 'system-ui, -apple-system, sans-serif',
-                fontSize: '13px',
-                fontWeight: '500',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                backdropFilter: 'blur(8px)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              更换照片
-            </button>
-            <button 
-              onClick={() => setDebugMode(!debugMode)} 
-              style={{ 
-                height: '40px',
-                padding: '0 20px', 
-                backgroundColor: debugMode ? 'rgba(255, 215, 0, 0.9)' : 'rgba(0,0,0,0.5)', 
-                border: debugMode ? '1px solid rgba(255, 215, 0, 1)' : '1px solid rgba(255, 215, 0, 0.4)', 
-                color: debugMode ? '#000' : '#FFD700', 
-                fontFamily: 'system-ui, -apple-system, sans-serif', 
-                fontSize: '13px', 
-                fontWeight: '600', 
-                borderRadius: '10px',
-                cursor: 'pointer', 
-                backdropFilter: 'blur(8px)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-               {debugMode ? '隐藏画面' : '📷 摄像头画面'}
-            </button>
-            <button 
-              onClick={() => setSceneState(s => s === 'CHAOS' ? 'FORMED' : 'CHAOS')} 
-              style={{ 
-                height: '40px',
-                padding: '0 28px', 
-                backgroundColor: 'rgba(255, 215, 0, 0.9)', 
-                border: '1px solid rgba(255, 215, 0, 1)', 
-                color: '#000', 
-                fontFamily: 'system-ui, -apple-system, sans-serif', 
-                fontSize: '14px', 
-                fontWeight: '600', 
-                letterSpacing: '1px',
-                borderRadius: '10px',
-                cursor: 'pointer', 
-                backdropFilter: 'blur(8px)',
-                transition: 'all 0.2s ease',
-                boxShadow: '0 4px 15px rgba(255, 215, 0, 0.2)'
-              }}
-            >
-               {sceneState === 'CHAOS' ? '聚合' : '散开'}
-            </button>
+            {!sharedView && (
+              <button
+                onClick={copyShareLink}
+                style={{
+                  height: '40px',
+                  padding: '0 16px',
+                  borderRadius: '10px',
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  color: 'rgba(255, 255, 255, 0.9)',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                  transition: 'all 0.2s ease',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+                }}
+                title="复制分享链接"
+              >
+                📤
+                <span>分享</span>
+              </button>
+            )}
+            {!sharedView && (
+              <>
+                <button
+                  onClick={() => setPage('UPLOAD')}
+                  style={{
+                    height: '40px',
+                    padding: '0 20px',
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                    color: 'rgba(255, 255, 255, 0.85)',
+                    fontFamily: 'system-ui, -apple-system, sans-serif',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    borderRadius: '10px',
+                    cursor: 'pointer',
+                    backdropFilter: 'blur(8px)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  更换照片
+                </button>
+                <button 
+                  onClick={() => setDebugMode(!debugMode)} 
+                  style={{ 
+                    height: '40px',
+                    padding: '0 20px', 
+                    backgroundColor: debugMode ? 'rgba(255, 215, 0, 0.9)' : 'rgba(0,0,0,0.5)', 
+                    border: debugMode ? '1px solid rgba(255, 215, 0, 1)' : '1px solid rgba(255, 215, 0, 0.4)', 
+                    color: debugMode ? '#000' : '#FFD700', 
+                    fontFamily: 'system-ui, -apple-system, sans-serif', 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    borderRadius: '10px',
+                    cursor: 'pointer', 
+                    backdropFilter: 'blur(8px)',
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                   {debugMode ? '隐藏画面' : '📷 摄像头画面'}
+                </button>
+                <button 
+                  onClick={() => setSceneState(s => s === 'CHAOS' ? 'FORMED' : 'CHAOS')} 
+                  style={{ 
+                    height: '40px',
+                    padding: '0 28px', 
+                    backgroundColor: 'rgba(255, 215, 0, 0.9)', 
+                    border: '1px solid rgba(255, 215, 0, 1)', 
+                    color: '#000', 
+                    fontFamily: 'system-ui, -apple-system, sans-serif', 
+                    fontSize: '14px', 
+                    fontWeight: '600', 
+                    letterSpacing: '1px',
+                    borderRadius: '10px',
+                    cursor: 'pointer', 
+                    backdropFilter: 'blur(8px)',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 4px 15px rgba(255, 215, 0, 0.2)'
+                  }}
+                >
+                   {sceneState === 'CHAOS' ? '聚合' : '散开'}
+                </button>
+              </>
+            )}
+            {sharedView && (
+              <button
+                onClick={() => {
+                  setSharedView(false);
+                  setPage('UPLOAD');
+                  setUploaded([]);
+                  setPhotoMode('photos');
+                }}
+                style={{
+                  height: '40px',
+                  padding: '0 18px',
+                  backgroundColor: 'rgba(255, 215, 0, 0.9)',
+                  border: '1px solid rgba(255, 215, 0, 1)',
+                  color: '#000',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                去制作我的圣诞树
+              </button>
+            )}
           </div>
 
       {/* UI - AI Status */}
