@@ -690,30 +690,50 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
           </div>
         </div>
       ) : (
-        <button
-          onClick={onToggleOverlay}
+        <div
           style={{
             position: 'absolute',
             top: overlayPos.y,
             left: overlayPos.x,
             zIndex: 12,
-            width: 46,
-            height: 46,
-            borderRadius: 12,
-            border: '1px solid rgba(255,255,255,0.15)',
+            width: 220,
+            height: 40,
             background: 'rgba(0,0,0,0.5)',
-            color: 'rgba(255,255,255,0.85)',
-            cursor: 'pointer',
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: '12px',
             backdropFilter: 'blur(8px)',
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: '0 8px 20px rgba(0,0,0,0.35)'
+            justifyContent: 'space-between',
+            padding: '0 10px',
+            color: 'rgba(255,255,255,0.85)',
+            boxShadow: '0 8px 20px rgba(0,0,0,0.35)',
+            cursor: 'move'
           }}
-          title="展开摄像头画面"
+          onMouseDown={startDrag}
         >
-          📷
-        </button>
+          <span style={{ fontSize: 12, letterSpacing: 1 }}>摄像头画面</span>
+          <button
+            onClick={(e) => { e.stopPropagation(); onToggleOverlay(); }}
+            style={{
+              width: 22,
+              height: 22,
+              borderRadius: 11,
+              border: '1px solid rgba(255,255,255,0.2)',
+              background: 'rgba(0,0,0,0.3)',
+              color: 'rgba(255,255,255,0.8)',
+              cursor: 'pointer',
+              fontSize: 12,
+              lineHeight: 1,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            title="展开画面"
+          >
+            ▾
+          </button>
+        </div>
       )}
     </>
   );
@@ -876,7 +896,7 @@ export default function GrandTreeApp() {
     try {
       const json = JSON.stringify(payload);
       const encoded = btoa(unescape(encodeURIComponent(json)));
-      const url = `${window.location.origin}${window.location.pathname}?shared=${encoded}`;
+      const url = `${window.location.origin}${window.location.pathname}#shared=${encoded}`;
       await navigator.clipboard.writeText(url);
       alert('分享链接已复制，可发送给好友查看你的圣诞树');
     } catch (err) {
@@ -1022,8 +1042,8 @@ export default function GrandTreeApp() {
   }, []);
 
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('shared');
+    const hash = window.location.hash;
+    const token = hash.startsWith('#shared=') ? hash.replace('#shared=', '') : null;
     if (!token) return;
     (async () => {
       try {
