@@ -476,14 +476,6 @@ const Experience = ({ sceneState, rotationSpeed, photoUrls, photoMode, zoom, til
 
 // --- Gesture Controller ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CameraOnIcon = ({ color = '#FFD700' }: { color?: string }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="7" width="13" height="10" rx="2" ry="2" />
-    <polygon points="16 8 21 5 21 19 16 16" />
-    <circle cx="9" cy="12" r="2.2" fill={color} stroke="none" />
-  </svg>
-);
-
 const CameraOffIcon = ({ color = '#FF6666' }: { color?: string }) => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="7" width="10" height="8" rx="2" ry="2" />
@@ -641,122 +633,74 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
   };
 
   return (
-    <>
-      {overlayVisible ? (
-        <div
+    <div
+      style={{
+        position: 'absolute',
+        top: overlayPos.y,
+        left: overlayPos.x,
+        width: 340,
+        height: overlayVisible ? 220 : 40,
+        zIndex: 12,
+        background: 'rgba(0,0,0,0.5)',
+        border: '1px solid rgba(255,255,255,0.15)',
+        borderRadius: '12px',
+        backdropFilter: 'blur(10px)',
+        overflow: 'hidden',
+        boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
+        transition: 'height 0.25s ease, opacity 0.2s ease'
+      }}
+    >
+      <div
+        style={{
+          height: 32,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 10px',
+          cursor: 'move',
+          color: 'rgba(255,255,255,0.8)',
+          fontSize: 12,
+          letterSpacing: 1,
+          borderBottom: '1px solid rgba(255,255,255,0.08)'
+        }}
+        onMouseDown={startDrag}
+      >
+        <span>摄像头画面</span>
+        <button
+          onClick={(e) => { e.stopPropagation(); onToggleOverlay(); }}
           style={{
-            position: 'absolute',
-            top: overlayPos.y,
-            left: overlayPos.x,
-            width: 340,
-            height: 220,
-            zIndex: 12,
-            background: 'rgba(0,0,0,0.5)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: '12px',
-            backdropFilter: 'blur(10px)',
-            overflow: 'hidden',
-            boxShadow: '0 10px 30px rgba(0,0,0,0.35)'
-          }}
-        >
-          <div
-            style={{
-              height: 32,
-              display: 'flex',
-              alignItems: 'center',
-            justifyContent: 'space-between',
-              padding: '0 10px',
-              cursor: 'move',
-              color: 'rgba(255,255,255,0.8)',
-              fontSize: 12,
-              letterSpacing: 1,
-              borderBottom: '1px solid rgba(255,255,255,0.08)'
-            }}
-            onMouseDown={startDrag}
-          >
-            <span>摄像头画面</span>
-            <button
-              onClick={(e) => { e.stopPropagation(); onToggleOverlay(); }}
-              style={{
-                width: 22,
-                height: 22,
-                borderRadius: 11,
-                border: '1px solid rgba(255,255,255,0.2)',
-                background: 'rgba(0,0,0,0.3)',
-                color: 'rgba(255,255,255,0.8)',
-                cursor: 'pointer',
-                fontSize: 12,
-                lineHeight: 1,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-            title="收起画面"
-            >
-              –
-            </button>
-          </div>
-          <div style={{ position: 'relative', width: '100%', height: 'calc(100% - 32px)' }}>
-            <video
-              ref={videoRef}
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: cameraEnabled ? 0.9 : 0.3, transform: 'scaleX(-1)' }}
-              playsInline
-              muted
-              autoPlay
-            />
-            <canvas
-              ref={canvasRef}
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)' }}
-            />
-          </div>
-        </div>
-      ) : (
-        <div
-          style={{
-            position: 'absolute',
-            top: overlayPos.y,
-            left: overlayPos.x,
-            zIndex: 12,
-            width: 200,
-            height: 40,
-            background: 'rgba(0,0,0,0.5)',
-            border: '1px solid rgba(255,255,255,0.15)',
-            borderRadius: '12px',
-            backdropFilter: 'blur(8px)',
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            border: '1px solid rgba(255,255,255,0.2)',
+            background: 'rgba(0,0,0,0.3)',
+            color: 'rgba(255,255,255,0.8)',
+            cursor: 'pointer',
+            fontSize: 16,
+            lineHeight: 1,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '0 10px',
-            color: 'rgba(255,255,255,0.85)',
-            boxShadow: '0 8px 20px rgba(0,0,0,0.35)',
-            cursor: 'move'
+            justifyContent: 'center'
           }}
-          onMouseDown={startDrag}
+          title={overlayVisible ? "收起画面" : "展开画面"}
         >
-          <span style={{ fontSize: 12, letterSpacing: 1 }}>摄像头画面</span>
-          <button
-            onClick={(e) => { e.stopPropagation(); onToggleOverlay(); }}
-            style={{
-              width: 22,
-              height: 22,
-              borderRadius: 11,
-              border: '1px solid rgba(255,255,255,0.2)',
-              background: 'rgba(0,0,0,0.3)',
-              color: 'rgba(255,255,255,0.8)',
-              cursor: 'pointer',
-              fontSize: 12,
-              lineHeight: 1,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            title="展开画面"
-          >
-            +
-          </button>
-        </div>
-      )}
-    </>
+          {overlayVisible ? '-' : '+'}
+        </button>
+      </div>
+      <div style={{ position: 'relative', width: '100%', height: overlayVisible ? 'calc(100% - 32px)' : '0px', opacity: overlayVisible ? 1 : 0, transition: 'height 0.25s ease, opacity 0.2s ease' }}>
+        <video
+          ref={videoRef}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: cameraEnabled ? 0.9 : 0.3, transform: 'scaleX(-1)' }}
+          playsInline
+          muted
+          autoPlay
+        />
+        <canvas
+          ref={canvasRef}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', transform: 'scaleX(-1)' }}
+        />
+      </div>
+    </div>
   );
 };
 
@@ -859,7 +803,7 @@ export default function GrandTreeApp() {
   const [tilt, setTilt] = useState(0.5); // 0 为仰视, 1 为俯视
   const [hasHand, setHasHand] = useState(false);
   const [aiStatus, setAiStatus] = useState("INITIALIZING...");
-  const [debugMode, setDebugMode] = useState(false);
+  const [debugMode] = useState(false);
   const [page, setPage] = useState<'UPLOAD' | 'TREE'>('UPLOAD');
   const [uploaded, setUploaded] = useState<UploadedImage[]>([]);
   const uploadedRef = useRef<UploadedImage[]>([]);
