@@ -492,6 +492,14 @@ const CameraOffIcon = ({ color = '#FF6666' }: { color?: string }) => (
   </svg>
 );
 
+const NoteIcon = ({ active, colorOn = '#000', colorOff = 'rgba(255,255,255,0.85)' }: { active: boolean, colorOn?: string, colorOff?: string }) => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? colorOn : colorOff} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M9 18V5l10-2v13" />
+    <circle cx="7" cy="18" r="3" fill={active ? colorOn : 'none'} />
+    <circle cx="17" cy="16" r="3" fill="none" />
+  </svg>
+);
+
 const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, onStatus, debugMode, cameraEnabled, overlayVisible, overlayPos, onToggleOverlay, onDragOverlay }: any) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -1145,7 +1153,7 @@ export default function GrandTreeApp() {
           <PhotoViewer url={selectedImageUrl} onClose={() => setSelectedImageUrl(null)} />
 
           {/* UI - Buttons */}
-          <div style={{ position: 'absolute', bottom: '30px', right: '40px', zIndex: 10, display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <div style={{ position: 'absolute', bottom: '30px', right: '40px', zIndex: 50, display: 'flex', gap: '12px', alignItems: 'center' }}>
             <button
               onClick={() => setMusicOn(m => !m)}
               style={{
@@ -1169,7 +1177,7 @@ export default function GrandTreeApp() {
               }}
               title={musicOn ? '关闭音乐' : '开启音乐'}
             >
-              ♪
+              <NoteIcon active={musicOn} />
             </button>
             <button
               onClick={() => {
