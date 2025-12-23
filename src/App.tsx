@@ -121,7 +121,7 @@ const Foliage = ({ state }: { state: 'CHAOS' | 'FORMED' }) => {
     if (materialRef.current) {
       materialRef.current.uTime = rootState.clock.elapsedTime;
       const targetProgress = state === 'FORMED' ? 1 : 0;
-      materialRef.current.uProgress = MathUtils.damp(materialRef.current.uProgress, targetProgress, 1.5, delta);
+      materialRef.current.uProgress = MathUtils.lerp(materialRef.current.uProgress, targetProgress, delta * 1.5);
     }
   });
   return (
@@ -415,18 +415,18 @@ const Experience = ({ sceneState, rotationSpeed, photoUrls, photoMode, zoom, til
     if (controlsRef.current) {
       if (hasHand) {
         // 1. 处理旋转
-      controlsRef.current.setAzimuthalAngle(controlsRef.current.getAzimuthalAngle() + rotationSpeed);
+        controlsRef.current.setAzimuthalAngle(controlsRef.current.getAzimuthalAngle() + rotationSpeed);
         
         // 2. 处理俯仰角 (上下移动手控制)
         const targetPolar = MathUtils.lerp(Math.PI / 4, Math.PI / 1.8, tilt);
         const currentPolar = controlsRef.current.getPolarAngle();
-        const newPolar = MathUtils.damp(currentPolar, targetPolar, 2, delta);
+        const newPolar = MathUtils.lerp(currentPolar, targetPolar, delta * 2);
         controlsRef.current.setPolarAngle(newPolar);
 
         // 3. 处理缩放 (前后移动手控制)
         const targetDist = MathUtils.lerp(30, 120, zoom);
         const currentDist = controlsRef.current.getDistance();
-        const newDist = MathUtils.damp(currentDist, targetDist, 2, delta);
+        const newDist = MathUtils.lerp(currentDist, targetDist, delta * 2);
         
         controlsRef.current.minDistance = newDist - 0.1;
         controlsRef.current.maxDistance = newDist + 0.1;
@@ -444,7 +444,17 @@ const Experience = ({ sceneState, rotationSpeed, photoUrls, photoMode, zoom, til
   return (
     <>
       <PerspectiveCamera makeDefault position={[0, 8, 60]} fov={45} />
-      <OrbitControls ref={controlsRef} enablePan={false} enableZoom={true} minDistance={30} maxDistance={120} autoRotate={rotationSpeed === 0 && sceneState === 'FORMED'} autoRotateSpeed={0.3} maxPolarAngle={Math.PI / 1.7} />
+      <OrbitControls 
+        ref={controlsRef} 
+        enabled={!hasHand}
+        enablePan={false} 
+        enableZoom={true} 
+        minDistance={30} 
+        maxDistance={120} 
+        autoRotate={rotationSpeed === 0 && sceneState === 'FORMED'} 
+        autoRotateSpeed={0.3} 
+        maxPolarAngle={Math.PI / 1.7} 
+      />
 
       <color attach="background" args={['#000300']} />
       <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
