@@ -705,7 +705,7 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
   );
 };
 
-// --- Component: Photo Viewer Modal ---
+// --- Component: Photo Viewer Modal (Polaroid Style) ---
 const PhotoViewer = ({ url, onClose }: { url: string | null, onClose: () => void }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [activeUrl, setActiveUrl] = useState<string | null>(null);
@@ -725,15 +725,15 @@ const PhotoViewer = ({ url, onClose }: { url: string | null, onClose: () => void
   if (!activeUrl && !isVisible) return null;
 
   return (
-    <div 
-      style={{ 
-        position: 'fixed', 
-        inset: 0, 
-        zIndex: 1000, 
-        backgroundColor: 'rgba(0,0,0,0.92)', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 1000,
+        backgroundColor: 'rgba(0,0,0,0.92)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
         backdropFilter: 'blur(15px)',
         cursor: 'zoom-out',
         opacity: isVisible ? 1 : 0,
@@ -742,55 +742,67 @@ const PhotoViewer = ({ url, onClose }: { url: string | null, onClose: () => void
       }}
       onClick={onClose}
     >
-      <div 
-        style={{ 
-          position: 'relative', 
-          maxWidth: '85vw', 
-          maxHeight: '85vh',
-          boxShadow: '0 20px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(255, 215, 0, 0.1)',
-          borderRadius: '16px',
-          overflow: 'hidden',
+      <div
+        style={{
+          position: 'relative',
+          maxWidth: '70vw',
+          maxHeight: '80vh',
           transform: isVisible ? 'scale(1) translateY(0)' : 'scale(0.9) translateY(20px)',
           transition: 'transform 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
-          background: '#111'
+          pointerEvents: 'none', // 允许点击外围关闭
         }}
       >
-        <img 
-          src={activeUrl || ''} 
-          alt="Large View" 
-          style={{ 
-            display: 'block', 
-            maxWidth: '100%', 
-            maxHeight: '85vh', 
-            objectFit: 'contain' 
-          }} 
-        />
-        <button 
-          onClick={(e) => { e.stopPropagation(); onClose(); }}
+        <div
           style={{
-            position: 'absolute',
-            top: '24px',
-            right: '24px',
-            width: '44px',
-            height: '44px',
-            borderRadius: '22px',
-            border: '1px solid rgba(255,255,255,0.15)',
-            background: 'rgba(0,0,0,0.4)',
-            color: '#fff',
-            fontSize: '28px',
-            cursor: 'pointer',
+            pointerEvents: 'auto',
+            background: '#FEFAF0',
+            border: '1px solid rgba(0,0,0,0.06)',
+            borderRadius: '10px',
+            boxShadow: '0 18px 55px rgba(0,0,0,0.45), 0 0 25px rgba(255, 215, 0, 0.08)',
+            padding: '14px 14px 28px 14px',
             display: 'flex',
+            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'center',
-            backdropFilter: 'blur(10px)',
-            transition: 'all 0.2s ease',
-            lineHeight: 1
+            gap: '12px',
+            transform: 'rotate(-1deg)',
+            transition: 'transform 0.3s ease'
           }}
-          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-          onMouseOut={(e) => e.currentTarget.style.background = 'rgba(0,0,0,0.4)'}
+          onClick={(e) => e.stopPropagation()}
+          onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.transform = 'rotate(0deg)'; }}
+          onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.transform = 'rotate(-1deg)'; }}
         >
-          ×
-        </button>
+          <div
+            style={{
+              width: 'min(56vw, 520px)',
+              maxWidth: '520px',
+              maxHeight: '65vh',
+              background: '#222',
+              borderRadius: '6px',
+              overflow: 'hidden',
+              boxShadow: '0 8px 20px rgba(0,0,0,0.25)'
+            }}
+          >
+            <img
+              src={activeUrl || ''}
+              alt="Memory"
+              style={{
+                display: 'block',
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                transition: 'transform 0.4s ease',
+              }}
+            />
+          </div>
+          <div
+            style={{
+              height: '8px',
+              width: '80%',
+              background: 'linear-gradient(90deg, rgba(0,0,0,0.05), rgba(0,0,0,0.08), rgba(0,0,0,0.05))',
+              borderRadius: '999px'
+            }}
+          />
+        </div>
       </div>
     </div>
   );
