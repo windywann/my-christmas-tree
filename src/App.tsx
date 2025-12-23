@@ -399,7 +399,7 @@ const Experience = ({ sceneState, rotationSpeed, photoUrls, photoMode, zoom, til
     if (controlsRef.current) {
       if (hasHand) {
         // 1. 处理旋转
-        controlsRef.current.setAzimuthalAngle(controlsRef.current.getAzimuthalAngle() + rotationSpeed);
+      controlsRef.current.setAzimuthalAngle(controlsRef.current.getAzimuthalAngle() + rotationSpeed);
         
         // 2. 处理俯仰角 (上下移动手控制)
         const targetPolar = MathUtils.lerp(Math.PI / 4, Math.PI / 1.8, tilt);
@@ -523,7 +523,7 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
               const hand = results.landmarks[0];
               // 旋转控制 (x轴上下移动)
               const speed = (0.5 - hand[0].x) * 0.15;
-              onMove(Math.abs(speed) > 0.01 ? speed : 0);
+                onMove(Math.abs(speed) > 0.01 ? speed : 0);
 
               // 俯仰角控制 (y轴上下移动)
               // 映射 hand[0].y (0-1) 到 tilt 值
@@ -804,22 +804,22 @@ export default function GrandTreeApp() {
         />
       ) : (
         <>
-          <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
+      <div style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 1 }}>
             <Suspense fallback={
               <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FFD700', fontSize: '12px', letterSpacing: '4px' }}>
                 GENERATING LUXURY TREE...
               </div>
             }>
-              <Canvas dpr={[1, 2]} gl={{ toneMapping: THREE.ReinhardToneMapping }} shadows>
+        <Canvas dpr={[1, 2]} gl={{ toneMapping: THREE.ReinhardToneMapping }} shadows>
                   <Experience sceneState={sceneState} rotationSpeed={rotationSpeed} photoUrls={photoUrls} photoMode={photoMode} zoom={zoom} tilt={tilt} hasHand={hasHand} onPhotoClick={setSelectedImageUrl} />
-              </Canvas>
+        </Canvas>
             </Suspense>
-          </div>
+      </div>
           <GestureController onGesture={setSceneState} onMove={setRotationSpeed} onZoom={setZoom} onTilt={setTilt} onHandPresence={setHasHand} onStatus={setAiStatus} debugMode={debugMode} />
 
           <PhotoViewer url={selectedImageUrl} onClose={() => setSelectedImageUrl(null)} />
 
-          {/* UI - Buttons */}
+      {/* UI - Buttons */}
           <div style={{ position: 'absolute', bottom: '30px', right: '40px', zIndex: 10, display: 'flex', gap: '12px' }}>
             <button
               onClick={() => setPage('UPLOAD')}
@@ -858,7 +858,7 @@ export default function GrandTreeApp() {
               }}
             >
                {debugMode ? '隐藏画面' : '📷 摄像头画面'}
-            </button>
+        </button>
             <button 
               onClick={() => setSceneState(s => s === 'CHAOS' ? 'FORMED' : 'CHAOS')} 
               style={{ 
@@ -879,13 +879,13 @@ export default function GrandTreeApp() {
               }}
             >
                {sceneState === 'CHAOS' ? '聚合' : '散开'}
-            </button>
-          </div>
+        </button>
+      </div>
 
-          {/* UI - AI Status */}
-          <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', color: aiStatus.includes('ERROR') ? '#FF0000' : 'rgba(255, 215, 0, 0.4)', fontSize: '10px', letterSpacing: '2px', zIndex: 10, background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px' }}>
-            {aiStatus}
-          </div>
+      {/* UI - AI Status */}
+      <div style={{ position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)', color: aiStatus.includes('ERROR') ? '#FF0000' : 'rgba(255, 215, 0, 0.4)', fontSize: '10px', letterSpacing: '2px', zIndex: 10, background: 'rgba(0,0,0,0.5)', padding: '4px 8px', borderRadius: '4px' }}>
+        {aiStatus}
+      </div>
           <div style={{ 
             position: 'absolute', 
             top: '60px', 
