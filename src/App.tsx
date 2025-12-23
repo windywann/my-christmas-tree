@@ -476,24 +476,30 @@ const Experience = ({ sceneState, rotationSpeed, photoUrls, photoMode, zoom, til
 
 // --- Gesture Controller ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CameraOnIcon = ({ color = '#FFD700' }: { color?: string }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="7" width="13" height="10" rx="2" ry="2" />
-    <polygon points="16 8 21 5 21 19 16 16" />
-    <circle cx="9" cy="12" r="2.2" fill={color} stroke="none" />
+const CameraOnIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <path d="M907.712 642.592l-2.624-302.592-204.256 145.056 206.88 157.536z m-39.68-354.784a64 64 0 0 1 101.056 51.648l2.624 302.592a64 64 0 0 1-102.752 51.456l-206.912-157.536a64 64 0 0 1 1.728-103.104l204.256-145.056z" fill="#ffffff"></path>
+    <path d="M144 256a32 32 0 0 0-32 32v417.376a32 32 0 0 0 32 32h456.32a32 32 0 0 0 32-32V288a32 32 0 0 0-32-32H144z m0-64h456.32a96 96 0 0 1 96 96v417.376a96 96 0 0 1-96 96H144a96 96 0 0 1-96-96V288a96 96 0 0 1 96-96z" fill="#ffffff"></path>
   </svg>
 );
 
-const CameraOffIcon = ({ color = '#FF6666' }: { color?: string }) => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+const CameraOffIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#FF6666" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <rect x="3" y="7" width="10" height="8" rx="2" ry="2" />
     <line x1="1.5" y1="1.5" x2="22.5" y2="22.5" />
     <polygon points="15 9 21 5 21 14" />
   </svg>
 );
 
+const ShareIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg">
+    <path d="M789.333333 490.666667c-12.8 0-21.333333 8.533333-21.333333 21.333333v279.466667c0 10.666667-8.533333 19.2-19.2 19.2H253.866667c-10.666667 0-19.2-8.533333-19.2-19.2V275.2c0-10.666667 8.533333-19.2 19.2-19.2H512c12.8 0 21.333333-8.533333 21.333333-21.333333s-8.533333-21.333333-21.333333-21.333334H253.866667C219.733333 213.333333 192 241.066667 192 275.2V789.333333c0 34.133333 27.733333 61.866667 61.866667 61.866667H746.666667c34.133333 0 61.866667-27.733333 61.866666-61.866667V512c2.133333-12.8-6.4-21.333333-19.2-21.333333z" fill="#ffffff"></path>
+    <path d="M853.333333 192c0-2.133333 0-4.266667-2.133333-8.533333 0-2.133333-2.133333-2.133333-2.133333-2.133334-2.133333-4.266667-6.4-6.4-8.533334-8.533333-2.133333-2.133333-6.4-2.133333-8.533333-2.133333h-170.666667c-12.8 0-21.333333 8.533333-21.333333 21.333333s8.533333 21.333333 21.333333 21.333333h119.466667L394.666667 599.466667c-8.533333 8.533333-8.533333 21.333333 0 29.866666 8.533333 8.533333 21.333333 8.533333 29.866666 0L810.666667 243.2V362.666667c0 12.8 8.533333 21.333333 21.333333 21.333333s21.333333-8.533333 21.333333-21.333333V192z" fill="#ffffff"></path>
+  </svg>
+);
+
 const NoteIcon = ({ active, colorOn = '#000', colorOff = 'rgba(255,255,255,0.85)' }: { active: boolean, colorOn?: string, colorOff?: string }) => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={active ? colorOn : colorOff} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={active ? colorOn : colorOff} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M9 18V5l10-2v13" />
     <circle cx="7" cy="18" r="3" fill={active ? colorOn : 'none'} />
     <circle cx="17" cy="16" r="3" fill="none" />
@@ -672,7 +678,7 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
                 background: 'rgba(0,0,0,0.3)',
                 color: 'rgba(255,255,255,0.8)',
                 cursor: 'pointer',
-                fontSize: 12,
+                fontSize: 16,
                 lineHeight: 1,
                 display: 'flex',
                 alignItems: 'center',
@@ -680,7 +686,7 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
               }}
               title="收起画面"
             >
-              –
+              -
             </button>
           </div>
           <div style={{ position: 'relative', width: '100%', height: 'calc(100% - 32px)' }}>
@@ -704,7 +710,7 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
             top: overlayPos.y,
             left: overlayPos.x,
             zIndex: 12,
-            width: 220,
+            width: 340,
             height: 40,
             background: 'rgba(0,0,0,0.5)',
             border: '1px solid rgba(255,255,255,0.15)',
@@ -731,7 +737,7 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
               background: 'rgba(0,0,0,0.3)',
               color: 'rgba(255,255,255,0.8)',
               cursor: 'pointer',
-              fontSize: 12,
+              fontSize: 16,
               lineHeight: 1,
               display: 'flex',
               alignItems: 'center',
@@ -739,7 +745,7 @@ const GestureController = ({ onGesture, onMove, onZoom, onTilt, onHandPresence, 
             }}
             title="展开画面"
           >
-            ▾
+            +
           </button>
         </div>
       )}
@@ -1152,8 +1158,8 @@ export default function GrandTreeApp() {
 
           <PhotoViewer url={selectedImageUrl} onClose={() => setSelectedImageUrl(null)} />
 
-          {/* UI - Buttons */}
-          <div style={{ position: 'absolute', bottom: '30px', right: '40px', zIndex: 50, display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* UI - Top Left Buttons (Music & Share) */}
+          <div style={{ position: 'absolute', top: '30px', left: '40px', zIndex: 50, display: 'flex', gap: '12px', alignItems: 'center' }}>
             <button
               onClick={() => setMusicOn(m => !m)}
               style={{
@@ -1179,41 +1185,13 @@ export default function GrandTreeApp() {
             >
               <NoteIcon active={musicOn} />
             </button>
-            <button
-              onClick={() => {
-                setCameraEnabled(v => !v);
-                setCameraOverlayVisible(true);
-              }}
-              style={{
-                height: '40px',
-                padding: '0 14px',
-                borderRadius: '10px',
-                backgroundColor: cameraEnabled ? 'rgba(0,0,0,0.5)' : 'rgba(255, 0, 0, 0.15)',
-                border: cameraEnabled ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(255,0,0,0.5)',
-                color: cameraEnabled ? 'rgba(255, 255, 255, 0.9)' : '#ff8888',
-                fontFamily: 'system-ui, -apple-system, sans-serif',
-                fontSize: '13px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                backdropFilter: 'blur(8px)',
-                transition: 'all 0.2s ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-              }}
-              title={cameraEnabled ? '关闭摄像头' : '开启摄像头'}
-            >
-              {cameraEnabled ? <CameraOnIcon color="#FFD700" /> : <CameraOffIcon color="#ff6666" />}
-              <span>摄像头</span>
-            </button>
             {!sharedView && (
               <button
                 onClick={copyShareLink}
                 style={{
+                  width: '40px',
                   height: '40px',
-                  padding: '0 16px',
-                  borderRadius: '10px',
+                  borderRadius: '20px',
                   backgroundColor: 'rgba(0,0,0,0.5)',
                   border: '1px solid rgba(255, 255, 255, 0.15)',
                   color: 'rgba(255, 255, 255, 0.9)',
@@ -1225,15 +1203,42 @@ export default function GrandTreeApp() {
                   transition: 'all 0.2s ease',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
+                  justifyContent: 'center',
                   boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
                 }}
                 title="复制分享链接"
               >
-                📤
-                <span>分享</span>
+                <ShareIcon />
               </button>
             )}
+          </div>
+
+          {/* UI - Bottom Right Buttons */}
+          <div style={{ position: 'absolute', bottom: '30px', right: '40px', zIndex: 50, display: 'flex', gap: '12px', alignItems: 'center' }}>
+            <button
+              onClick={() => {
+                setCameraEnabled(v => !v);
+                setCameraOverlayVisible(true);
+              }}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '20px',
+                backgroundColor: cameraEnabled ? 'rgba(0,0,0,0.5)' : 'rgba(255, 0, 0, 0.15)',
+                border: cameraEnabled ? '1px solid rgba(255, 255, 255, 0.15)' : '1px solid rgba(255,0,0,0.5)',
+                color: cameraEnabled ? 'rgba(255, 255, 255, 1)' : '#ff8888',
+                cursor: 'pointer',
+                backdropFilter: 'blur(8px)',
+                transition: 'all 0.2s ease',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+              }}
+              title={cameraEnabled ? '关闭摄像头' : '开启摄像头'}
+            >
+              {cameraEnabled ? <CameraOnIcon /> : <CameraOffIcon />}
+            </button>
             {!sharedView && (
               <>
                 <button
@@ -1254,25 +1259,6 @@ export default function GrandTreeApp() {
                   }}
                 >
                   更换照片
-                </button>
-                <button 
-                  onClick={() => setDebugMode(!debugMode)} 
-                  style={{ 
-                    height: '40px',
-                    padding: '0 20px', 
-                    backgroundColor: debugMode ? 'rgba(255, 215, 0, 0.9)' : 'rgba(0,0,0,0.5)', 
-                    border: debugMode ? '1px solid rgba(255, 215, 0, 1)' : '1px solid rgba(255, 215, 0, 0.4)', 
-                    color: debugMode ? '#000' : '#FFD700', 
-                    fontFamily: 'system-ui, -apple-system, sans-serif', 
-                    fontSize: '13px', 
-                    fontWeight: '600', 
-                    borderRadius: '10px',
-                    cursor: 'pointer', 
-                    backdropFilter: 'blur(8px)',
-                    transition: 'all 0.2s ease'
-                  }}
-                >
-                   {debugMode ? '隐藏画面' : '📷 摄像头画面'}
                 </button>
                 <button 
                   onClick={() => setSceneState(s => s === 'CHAOS' ? 'FORMED' : 'CHAOS')} 
@@ -1297,6 +1283,33 @@ export default function GrandTreeApp() {
                 </button>
               </>
             )}
+            {sharedView && (
+              <button
+                onClick={() => {
+                  setSharedView(false);
+                  setPage('UPLOAD');
+                  setUploaded([]);
+                  setPhotoMode('photos');
+                }}
+                style={{
+                  height: '40px',
+                  padding: '0 18px',
+                  backgroundColor: 'rgba(255, 215, 0, 0.9)',
+                  border: '1px solid rgba(255, 215, 0, 1)',
+                  color: '#000',
+                  fontFamily: 'system-ui, -apple-system, sans-serif',
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  backdropFilter: 'blur(8px)',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                去制作我的圣诞树
+              </button>
+            )}
+          </div>
             {sharedView && (
               <button
                 onClick={() => {
