@@ -21,7 +21,8 @@ const MAX_UPLOAD_PHOTOS = 31;
 const MAX_IMAGE_DIMENSION = 2000; // 防止超大图导致 GPU/内存崩溃
 type PhotoMode = 'photos' | 'empty';
 const STORAGE_KEY = 'grand-tree-last-session';
-const BGM_URL = 'https://cdn.pixabay.com/download/audio/2022/12/14/audio_1e3fb4a3c5.mp3?filename=christmas-jingle-bells-ambient-12651.mp3';
+// 稳定可访问的圣诞氛围纯音乐（免版权）
+const BGM_URL = 'https://cdn.pixabay.com/download/audio/2021/12/22/audio_37b99c0f77.mp3?filename=christmas-background-12641.mp3';
 
 function cycleToLength<T>(arr: T[], length: number) {
   if (arr.length === 0) return [];
@@ -862,7 +863,18 @@ export default function GrandTreeApp() {
       const json = JSON.stringify(payload);
       const encoded = btoa(unescape(encodeURIComponent(json)));
       const url = `${window.location.origin}${window.location.pathname}#shared=${encoded}`;
-      await navigator.clipboard.writeText(url);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(url);
+      } else {
+        const t = document.createElement('textarea');
+        t.value = url;
+        t.style.position = 'fixed';
+        t.style.opacity = '0';
+        document.body.appendChild(t);
+        t.select();
+        document.execCommand('copy');
+        document.body.removeChild(t);
+      }
       alert('分享链接已复制，可发送给好友查看你的圣诞树');
     } catch (err) {
       console.error('复制分享链接失败:', err);
@@ -1049,6 +1061,18 @@ export default function GrandTreeApp() {
       audio.pause();
     }
   }, [page, musicOn]);
+
+  useEffect(() => {
+    // 用户首次交互时，若音乐开启则尝试播放一次，提升自动播放成功率
+    const handler = () => {
+      if (musicOn && page === 'TREE' && audioRef.current) {
+        audioRef.current.play().catch(() => {});
+      }
+      window.removeEventListener('pointerdown', handler);
+    };
+    window.addEventListener('pointerdown', handler, { passive: true });
+    return () => window.removeEventListener('pointerdown', handler);
+  }, [musicOn, page]);
 
   return (
     <div style={{ width: '100vw', height: '100vh', backgroundColor: '#000', position: 'relative', overflow: 'hidden' }}>
