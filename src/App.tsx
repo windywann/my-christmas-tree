@@ -871,7 +871,10 @@ export default function GrandTreeApp() {
   );
 
   const copyShareLink = useCallback(async () => {
-    if (photoMode !== 'photos' || uploaded.length === 0) return;
+    if (photoMode !== 'photos' || uploaded.length === 0) {
+      alert('请先上传照片生成圣诞树后，再进行分享哦～');
+      return;
+    }
     const payload = {
       photoMode,
       images: uploaded.map(img => ({ id: img.id, name: img.file.name, dataUrl: img.dataUrl }))
