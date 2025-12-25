@@ -22,7 +22,7 @@ const MAX_IMAGE_DIMENSION = 2000; // 防止超大图导致 GPU/内存崩溃
 type PhotoMode = 'photos' | 'empty';
 const STORAGE_KEY = 'grand-tree-last-session';
 // 稳定可访问的圣诞氛围纯音乐（免版权）
-const BGM_URL = 'https://cdn.pixabay.com/download/audio/2021/12/22/audio_37b99c0f77.mp3?filename=christmas-background-12641.mp3';
+const BGM_URL = '/bgm.mp3';
 
 function cycleToLength<T>(arr: T[], length: number) {
   if (arr.length === 0) return [];
